@@ -24,7 +24,7 @@ ezdl audio https://youtu.be/dQw4w9WgXcQ
 ```
 ezdl video https://youtu.be/dQw4w9WgXcQ?list=PLE0hg-LdSfycrpTtMImPSqFLle4yYNzWD wp
 ```
-- just the audio
+- just the audio but the whole playlist
 ```
 ezdl audio https://youtu.be/dQw4w9WgXcQ?list=PLE0hg-LdSfycrpTtMImPSqFLle4yYNzWD wp
 ```
