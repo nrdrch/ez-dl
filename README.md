@@ -1,5 +1,5 @@
 # ezdl
-just another yt-dlp wrappper for even more simplicity
+just another yt-dlp wrapper for even more simplicity
 
 ## Dependencies
 [Python](https://www.python.org/downloads/)
