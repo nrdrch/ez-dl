@@ -14,3 +14,8 @@ You can install ezdl using pip:
 
 ```pwsh
 pip install nrdrch-ezdl
+```
+to see usage examples run:
+```pwsh
+ezdl --help
+```
