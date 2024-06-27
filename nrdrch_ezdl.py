@@ -1,4 +1,4 @@
-import os
+import os, sys
 import subprocess
 import toml
 from rich.console import Console
@@ -9,14 +9,14 @@ console = Console()
 script_dir = os.path.dirname(__file__)
 # Define the path for settings.toml
 settings_path = os.path.join(os.path.dirname(__file__), 'settings.toml')
-
+VERSION_ID = "1.1.3"
 # Check if settings.toml exists, if not create it with default values
 def create_default_settings():
     console.print("Creating [bold yellow]settings.toml[/bold yellow] as it does not exist.")
     settings = {
         "paths": {
-            "audio_vault_path": r"$HOME\ezdl\Audio",
-            "video_vault_path": r"$HOME\ezdl\Video"
+            "audio_vault_path": r"~\ezdl\Audio",
+            "video_vault_path": r"~\ezdl\Video"
         },
         "settings": {
             "audio_quality": "0",
@@ -29,7 +29,6 @@ def create_default_settings():
         },
         "other": {
             "loading_animation": "aesthetic"
-        
         }
     }
     with open(settings_path, 'w') as f:
@@ -42,11 +41,18 @@ if not os.path.exists(settings_path):
 # Load settings from settings.toml
 with open(settings_path, 'r') as f:
     settings = toml.load(f)
+
+
+
+
+
 SPINNER = settings['other']['loading_animation']
 AUDIO_ALIAS = settings['aliases']['audio_download_alias']
 VIDEO_ALIAS = settings['aliases']['video_download_alias']
 AUDIO_VAULT_PATH = settings['paths']['audio_vault_path']
 VIDEO_VAULT_PATH = settings['paths']['video_vault_path']
+AU_PATH = os.path.expanduser(settings['paths']['audio_vault_path'])
+VID_PATH = os.path.expanduser(settings['paths']['video_vault_path'])
 # Execute yt-dlp command based on user input
 def execute_command(command, link, with_playlist):
     command = command.replace("{audio_vault_path}", settings['paths']['audio_vault_path'])
@@ -62,7 +68,7 @@ def execute_command(command, link, with_playlist):
         try:
             result = subprocess.run(['powershell', '-Command', command], capture_output=True, text=True)
             if result.returncode == 0:
-                console.print(":white_check_mark:[bold green] log [/bold green]Download complete!")
+                console.print(":heavy_check_mark:[bold green] log [/bold green]Download complete!")
             else:
                 console.print(f":x:[bold red] log [/bold red]{result.stderr}")
         except Exception as e:
@@ -74,9 +80,9 @@ def main():
     if len(sys.argv) < 2:
         console.print(":x:[bold red] log [/bold red]No arguments provided. Use '--help' for usage information.")
         return
-    
+
     if sys.argv[1] in ['--help', '-h']:
-        console.print("[bold white]yt-dlp wrapper for simplicity[/bold white] \n"
+        console.print("[bold white]yt-dlp wrapper for simplicity.[/bold white]" f":wrench: [#A0A0A0]Version[/#A0A0A0] [bold cyan]{VERSION_ID}[/bold cyan]" "\n"
                       "[bold cyan]Usage:[/bold cyan]\n"
                       " [#076841]ezdl [/#076841]" f"{AUDIO_ALIAS}" " <[#DBC75D]link[/#DBC75D]> \n"
                       " [#076841]ezdl [/#076841]" f"{VIDEO_ALIAS}" " <[#DBC75D]link[/#DBC75D]> \n"
@@ -85,10 +91,13 @@ def main():
                       " [#076841]ezdl [/#076841]" f"{AUDIO_ALIAS}" " <[#DBC75D]link[/#DBC75D]> [#DBC75D]wp[/#DBC75D] \n"
                       " [#076841]ezdl [/#076841]" f"{VIDEO_ALIAS}" " <[#DBC75D]link[/#DBC75D]> [#DBC75D]wp[/#DBC75D] \n"
                       "\n"
+                       "[bold white]to open locations use:[/bold white]\n"
+                      " [#076841]ezdl [/#076841] open [#DBC75D]settings[/#DBC75D], [#DBC75D]audio[/#DBC75D] or [#DBC75D]video[/#DBC75D] \n"
                       "[bold cyan]Locations:[/bold cyan]\n"
-                      ":wrench: [#A0A0A0]Settings [/#A0A0A0]" f"'{settings_path}'\n"
+                      
+                      ":gear:  [#A0A0A0]Settings [/#A0A0A0]" f"'{settings_path}'\n"
                       ":musical_note: [#A0A0A0]Audio    [/#A0A0A0]" f"'{AUDIO_VAULT_PATH}'" "\n"             
-                      ":movie_camera: [#A0A0A0]Video    [/#A0A0A0]" f"'{VIDEO_VAULT_PATH}'" "\n"             
+                      ":movie_camera: [#A0A0A0]Video    [/#A0A0A0]" f"'{VIDEO_VAULT_PATH}'" ""        
                       )
         return
 
@@ -97,6 +106,30 @@ def main():
         return
     
     alias = sys.argv[1]
+    if alias == 'open':
+        target = sys.argv[2] if len(sys.argv) > 2 else ''
+        if target == 'settings':
+            path = settings_path
+        elif target == 'audio':
+            path = path = AU_PATH
+        elif target == 'video':
+            path = VID_PATH
+        else:
+            console.print("[bold red]:x:[/bold red] Unknown target for open command.")
+            return
+
+        try:
+            if os.name == 'nt':  # Windows
+                subprocess.Popen(['explorer', os.path.normpath(path)])
+            elif os.name == 'posix':  # macOS and Linux
+                subprocess.run(['open' if sys.platform == 'darwin' else 'xdg-open', path])
+            console.print(f":heavy_check_mark: [bold green] log [/bold green] Opened path at {path}")
+        except Exception as e:
+            console.print(f"[bold red]:x: Exception![/bold red] {str(e)}")
+        return
+
+
+
     link = sys.argv[2]
     with_playlist = len(sys.argv) > 3 and (sys.argv[3] in ['wp', 'withplaylist'])
 
