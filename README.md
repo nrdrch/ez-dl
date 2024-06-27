@@ -3,7 +3,7 @@ just another yt-dlp wrapper for even more simplicity with rich styling and loadi
 
 ![](https://i.imgur.com/P26FHRJ.png)
 
-## Dependencies
+#### Dependencies
 [Python](https://www.python.org/downloads/)
 ## Installation
 You can install ezdl using pip:
@@ -16,7 +16,15 @@ pip install nrdrch-ezdl
 ```pwsh
 ezdl video https://youtu.be/dQw4w9WgXcQ
 ```
+- just the audio
+```
+ezdl audio https://youtu.be/dQw4w9WgXcQ
+```
 - Download the whole playlist if the link leads to a playlist
 ```
 ezdl video https://youtu.be/dQw4w9WgXcQ?list=PLE0hg-LdSfycrpTtMImPSqFLle4yYNzWD wp
+```
+-just the audio
+```
+ezdl audio https://youtu.be/dQw4w9WgXcQ?list=PLE0hg-LdSfycrpTtMImPSqFLle4yYNzWD wp
 ```
