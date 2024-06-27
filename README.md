@@ -1,13 +1,8 @@
 # ezdl
 just another yt-dlp wrappper for even more simplicity
 
-## Features
-
-- Download audio and video from different websites
-- Customizable download settings
-- Configurable paths for audio and video vaults
-- Supports downloading playlists
-
+## Dependencies
+[Python](https://www.python.org/downloads/)
 ## Installation
 
 You can install ezdl using pip:
