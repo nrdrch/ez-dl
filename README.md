@@ -1,4 +1,4 @@
-# ez-dl
+# ezex
 just another yt-dlp wrappper for even more simplicity
 
 ## Features
@@ -13,4 +13,4 @@ just another yt-dlp wrappper for even more simplicity
 You can install ezdl using pip:
 
 ```pwsh
-pip install ez-dl
+pip install ezex
