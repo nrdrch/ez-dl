@@ -1,7 +1,7 @@
 # ezdl
 just another yt-dlp wrapper for even more simplicity with rich styling and loading animations.
 
-![](https://i.imgur.com/P26FHRJ.png)
+![](https://i.imgur.com/yLlcVOA.png)
 
 #### Dependencies
 [Python](https://www.python.org/downloads/)
@@ -27,4 +27,8 @@ ezdl video https://youtu.be/dQw4w9WgXcQ?list=PLE0hg-LdSfycrpTtMImPSqFLle4yYNzWD 
 - just the audio but the whole playlist
 ```
 ezdl audio https://youtu.be/dQw4w9WgXcQ?list=PLE0hg-LdSfycrpTtMImPSqFLle4yYNzWD wp
+```
+- open locations by their name (settings, audio or video)
+```
+ezdl open settings
 ```
