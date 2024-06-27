@@ -12,5 +12,5 @@
 
 You can install ezdl using pip:
 
-```sh
+```pwsh
 pip install ezdl
