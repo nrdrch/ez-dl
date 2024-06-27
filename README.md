@@ -1,5 +1,5 @@
 # ezdl
-
+just another yt-dlp wrappper for even more simplicity
 
 ## Features
 
