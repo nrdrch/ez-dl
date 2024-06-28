@@ -1,3 +1,6 @@
 settings*
 v*
 setup.py
+build
+dist
+*egg-info
