@@ -1,10 +1,13 @@
-import os, sys, subprocess, toml, filecmp
+import os, sys, subprocess, toml, filecmp, re
 from rich.console import Console
+from rich import print as rprint
+from rich import box
+from rich.table import Table
 from rich.spinner import Spinner
 from shutil import copyfile
 from datetime import datetime
-VERSION_ID = "v1.1.6"
-# Initialize rich console
+VERSION_ID = "v1.1.7"
+
 console = Console()
 script_dir = os.path.dirname(__file__)
 # Define the path for settings.toml
@@ -22,7 +25,7 @@ default_settings = {
         "audio_quality": "0",
         "audio_format": "wav",
         "video_format": "mp4",
-        "file_naming_scheme": "%(title)s.%(ext)s",
+        "file_naming_scheme": "%(title)s - %(duration)s",
         "open_folder_after_download": "no",
         "use_original_thumbnail": "no"
     },
@@ -93,14 +96,35 @@ VIDEO_OPEN_ALIAS = settings['aliases']['video_open_alias']
 SETTINGS_OPEN_ALIAS = settings['aliases']['settings_open_alias']
 EMBED_THUMBNAILS = settings['settings']['use_original_thumbnail']
 OPEN_AFTER_DL = settings['settings']['open_folder_after_download']
-AU_PATH = os.path.expanduser(settings['paths']['audio_vault_path'])
-VID_PATH = os.path.expanduser(settings['paths']['video_vault_path'])
-# Execute yt-dlp command based on user input
 
+# Function to expand PowerShell variables
+def expand_powershell_variables(value):
+    if isinstance(value, str) and value.startswith('$'):
+        # Extract variable name
+        var_name = value[1:]  # Remove '$' prefix
+        if var_name.startswith('env:'):
+            var_name = var_name[4:]  # Remove 'env:' prefix for environment variables
 
+            return os.path.expandvars(f'%{var_name}%')  # Expand environment variables for Windows
+        else:
+            # Retrieve the value of the PowerShell variable from the environment
+            custom_value = os.getenv(var_name)
+            if custom_value is not None:
+                return custom_value
+            else:
+                return value  # Return original value if variable not found
+    return value  # Return unchanged if not starting with '$'
+# Function to handle path expansion based on type
+def expand_path(value):
+    if isinstance(value, str):
+        return expand_powershell_variables(value)
+    else:
+        return value
+AU_PATH = expand_path(os.path.expanduser(settings['paths']['audio_vault_path']))
+VID_PATH = expand_path(os.path.expanduser(settings['paths']['video_vault_path']))
 def execute_command(command, link, with_playlist):
-    command = command.replace("{audio_vault_path}", settings['paths']['audio_vault_path'])
-    command = command.replace("{video_vault_path}", settings['paths']['video_vault_path'])
+    command = command.replace("{audio_vault_path}", AU_PATH)
+    command = command.replace("{video_vault_path}", VID_PATH)
     command = command.replace("{audio_quality}", settings['settings']['audio_quality'])
     command = command.replace("{audio_format}", settings['settings']['audio_format'])
     command = command.replace("{video_format}", settings['settings']['video_format'])
@@ -139,7 +163,6 @@ def execute_command(command, link, with_playlist):
         except Exception as e:
             console.print(f":x:[bold red] log [/bold red]{str(e)}")
             return False
-# Main function to parse arguments and call the appropriate command
 def main():
     import sys
     if len(sys.argv) < 2:
@@ -157,12 +180,40 @@ def main():
                       "\n"
                        "[bold white]navigate to locations with:[/bold white]\n"
                       " [#076841]ezdl [/#076841]open [#DBC75D]" f"{SETTINGS_OPEN_ALIAS}" "[/#DBC75D], [#DBC75D]" f"{AUDIO_OPEN_ALIAS}" "[/#DBC75D] or [#DBC75D]"f"{VIDEO_OPEN_ALIAS}""[/#DBC75D] \n"
+                      "\n"
+                      "[bold white]Display helpful Information:[/bold white]\n"
+                      " [#076841]ezdl [/#076841][#DBC75D]--help[/#DBC75D]  or [#DBC75D] -h [/#DBC75D] \n"
+                      "[bold white]More helpful Information about settings:[/bold white]\n"
+                      " [#076841]ezdl [/#076841][#DBC75D]--help-settings[/#DBC75D]  or [#DBC75D] -hs [/#DBC75D] "
+                      "\n"
                       "[bold cyan]Locations:[/bold cyan]\n"
                       ":gear:  [#A0A0A0]Settings [/#A0A0A0]" f"'{settings_path}'\n"
-                      ":musical_note: [#A0A0A0]Audio    [/#A0A0A0]" f"'{os.path.normpath(AU_PATH)}'" "\n"             
-                      ":movie_camera: [#A0A0A0]Video    [/#A0A0A0]" f"'{os.path.normpath(VID_PATH)}'" ""        
+                      ":musical_note: [#A0A0A0]Audio    [/#A0A0A0]" f"'{os.path.expanduser(AU_PATH)}'" "\n"             
+                      ":movie_camera: [#A0A0A0]Video    [/#A0A0A0]" f'"{os.path.expanduser(VID_PATH)}"' ""        
                       )
         return
+    if sys.argv[1] in ['--help-settings', '-hs']:
+        try:
+            with open(settings_path, 'r', encoding='utf-8') as f:
+                settings = toml.load(f)
+
+            table = Table(show_header=True, header_style="bold cyan", box=box.SIMPLE_HEAD)
+            table.add_column("Setting", style="magenta", justify="left", width=45)
+            table.add_column("Description", style="#189255", justify="left", width=57)
+            table.add_column("Options & Usage Examples", style="bold white", justify="left", width=96)
+
+            for section, values in settings.items():
+                for key, value in values.items():
+                    description, options = get_setting_description(section, key)
+                    table.add_row(f"{key} = {value}", description, options)
+
+            console.print(table)
+
+        except Exception as e:
+            console.print(f":x:[bold red] Exception! [/bold red] {str(e)}")
+        return
+
+    
     if len(sys.argv) < 3:
 
         console.print(":x:[bold red] log [/bold red]Invalid number of arguments. Use '--help' or '-h' for usage information.")
@@ -174,13 +225,13 @@ def main():
             path = settings_path
         elif target == f'{AUDIO_OPEN_ALIAS}':
             path = path = AU_PATH
-        elif target == f'{VIDEO_ALIAS}':
+        elif target == f'{VIDEO_OPEN_ALIAS}':
             path = VID_PATH
         else:
             console.print("[bold red]:x:[/bold red] Unknown target for open command.")
             return
         try:
-            path = os.path.normpath(path)
+            path = os.path.expanduser(os.path.normpath(path))
             if not os.path.exists(path):
                 os.makedirs(path)
                 console.print(f":wrench: Creating [bold yellow]{path}[/bold yellow] since it didn't exist yet.")
@@ -193,14 +244,13 @@ def main():
             console.print(f"[bold red]:x: Exception![/bold red] {str(e)}")
         return
     link = sys.argv[2]
-    # If ignore playlist is 
     with_playlist = len(sys.argv) > 3 and (sys.argv[3] in ['wp', 'withplaylist'])
     if alias == f'{AUDIO_ALIAS}':
         command = '$null = yt-dlp -x --audio-quality {audio_quality} --audio-format {audio_format} --ignore-errors {embed_thumbnails} --output "{audio_vault_path}\\{naming_scheme}" --no-playlist "<youtube_link>"'
-        openpath = os.path.normpath(AU_PATH)
+        openpath = os.path.normpath(os.path.expanduser(AU_PATH))
     elif alias == f'{VIDEO_ALIAS}':
         command = '$null = yt-dlp --ignore-errors {embed_thumbnails} --remux-video {video_format} --output "{video_vault_path}\\{naming_scheme}" --no-playlist "<youtube_link>"'
-        openpath = os.path.normpath(VID_PATH)
+        openpath = os.path.normpath(os.path.expanduser(VID_PATH))
     else:
         console.print(":x:[bold red] log [/bold red]Unknown alias.")
         return
@@ -213,5 +263,36 @@ def main():
                 console.print(f":heavy_check_mark: [bold green] log [/bold green]Opened path at [bold yellow]{openpath}[/bold yellow]")
     except Exception as e:
         console.print(f":x:[bold red] Exception! [/bold red] {str(e)}")
+
+def get_setting_description(section, key):
+    descriptions = {
+        'paths': {
+            'audio_vault_path': ('Audio [red]save[/ red] location.', r'Set [yellow]Path[/yellow] with doubled right-slashes ("[bold green] \\ [/bold green]") [red]OR[/red] single left-slashes ("[bold green] / [/bold green]")  [red]OR[/red] set a [yellow]Variable[/yellow] by full name.'),
+            'video_vault_path': ("Video [red]save[/ red] location.", r'[#A0A0A0]To define [/#A0A0A0][yellow]variables[/yellow], [#A0A0A0]run this to open PSProfile[/#A0A0A0]: [yellow]notepad[/yellow] [green]$PROFILE[/green] ; define in normal path-format: [green]$env:yourvarname[/green] = "WindowsPathToDir" '),
+        },
+        'settings': {
+            'audio_quality': ('Audio [red]quality[/red] level', '[green]0[/green] - [red]10[/red] ([bold yellow]10[/bold yellow] = [bold red]worst[/bold red]) '),
+            'audio_format': ('Select preffered [red]file format[/red] for Audio.', "[green]wav[/green][bold white],[/bold white] [green]flac[/green][bold white],[/bold white] [yellow]mp3[/yellow][bold white],[/bold white] [yellow]opus[/yellow][bold white],[/bold white] [yellow]ogg[/yellow][bold white],[/bold white][yellow] mka[/yellow][bold white],[/bold white] [yellow]m4a[/yellow][bold white] or [/bold white][yellow]mov[/yellow]"),
+            'video_format': ('Select preffered [red]file format[/red] for Video.', "[green]mp4[/green][bold white],[/bold white] [green]m4v[/green][bold white] or[/bold white] [yellow]mov[/yellow]"),
+            'file_naming_scheme': ('The [red]naming-pattern[/red] after which files are created; use format: [green]%([bold yellow]option1[/bold yellow])s[/green][red]-[/red][green]%([bold yellow]option2[/bold yellow])s[/green][red]-[/red][green]%([bold yellow]option3[/bold yellow])s[/green].', "[yellow]title[/yellow], [yellow]id[/yellow], [yellow]ext[/yellow], [yellow]uploader[/yellow], [yellow]upload_date[/yellow], [yellow]channel[/yellow], [yellow]channel_id[/yellow], [yellow]view_count[/yellow], [yellow]like_count[/yellow], [yellow]duration[/yellow], [yellow]playlist[/yellow], [yellow]playlist_index[/yellow], [yellow]playlist_id[/yellow]"),
+            'open_folder_after_download': ('Open the [red]target directory[/red] after download is [red]done[/red].', "[green]yes[/green] or [red]no[/red]"),
+            'use_original_thumbnail': ('Use [red]original thumbnail[/red].', "[green]yes[/green] or [red]no[/red]"),
+        },
+        'aliases': {
+            'audio_download_alias': ('Alias for [red]donwloading audio[/red] only.', '[green]Any Word[/green] should work, avoid spaces or special characters'),
+            'video_download_alias': ('Alias for [red]downloading video[/red].', '[green]Any Word[/green] should work, avoid spaces or special characters'),
+            'audio_open_alias': ("Alias for [red]navigating[/red] to the [red]Audio-path[/red].", "[green]Any Word[/green] should work, avoid spaces or special characters"),
+            'video_open_alias': ('Alias for [red]navigating[/red] to the [red]Video-path[/red].','[green]Any Word[/green] should work, avoid spaces or special characters'),
+            'settings_open_alias': ('Alias for [red]navigating[/red] to the [red]Settings-path[/red].', '[green]Any Word[/green] should work, avoid spaces or special characters'),
+        },
+        'other': {
+            'loading_animation': ('[red]Loading animation[/red] style ', '[#A0A0A0]To preview different animations run [/#A0A0A0]: [yellow]python[/yellow] -m [green]rich.spinner[/green] '),
+        }
+    }
+
+    if section in descriptions and key in descriptions[section]:
+        return descriptions[section][key]
+    else:
+        return '', ''  
 if __name__ == "__main__":
     main()
