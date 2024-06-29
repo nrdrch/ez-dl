@@ -37,11 +37,9 @@ default_settings = {
         "loading_animation": "aesthetic"
     }
 }
-
 def create_default_settings():
     with open(settings_path, 'w', encoding='utf-8') as f:
-        toml.dump(default_settings, f)
-
+         toml.dump(default_settings, f)
 def merge_settings(default, current):
     """Merge missing keys from default settings into current settings."""
     for key, value in default.items():
