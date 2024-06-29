@@ -1,7 +1,7 @@
 # ezdl
 ### just another yt-dlp wrapper for even more simplicity with rich styling and loading animations.
 
-![](https://i.imgur.com/yLlcVOA.png)
+![](https://i.imgur.com/HHTUNv5.png)
 
 ### Dependencies
 [Python](https://www.python.org/downloads/)

@@ -6,7 +6,7 @@ from rich.table import Table
 from rich.spinner import Spinner
 from shutil import copyfile
 from datetime import datetime
-VERSION_ID = "v1.1.7"
+VERSION_ID = "v1.1.8"
 
 console = Console()
 script_dir = os.path.dirname(__file__)
@@ -153,7 +153,7 @@ def execute_command(command, link, with_playlist):
             command = command.replace("{embed_thumbnails}", '')
     with console.status("[bold cyan]Downloading[/bold cyan]", spinner=f"{SPINNER}", spinner_style="status.spinner", speed=1.0, refresh_per_second=12.5):
         try:
-            result = subprocess.run(['powershell', '-Command', command], capture_output=True, text=True)
+            result = subprocess.run(['powershell', '-Command', command], capture_output=True, text=True, encoding='utf-8', errors='ignore')
             if result.returncode == 0:
                 console.print(":heavy_check_mark:[bold green]  log [/bold green]Download complete!")
                 return True
@@ -236,7 +236,7 @@ def main():
                 os.makedirs(path)
                 console.print(f":wrench: Creating [bold yellow]{path}[/bold yellow] since it didn't exist yet.")
             if os.name == 'nt':  # Windows
-                subprocess.Popen(['explorer', path])
+                subprocess.run(['explorer', path])
             elif os.name == 'posix':  # macOS and Linux
                 subprocess.run(['open' if sys.platform == 'darwin' else 'xdg-open', path])
             console.print(f":heavy_check_mark: [bold green] log [/bold green]Opened path at [bold yellow]{path}[/bold yellow]")
@@ -259,7 +259,7 @@ def main():
             if OPEN_AFTER_DL == 'yes':
                 if not os.path.exists(openpath):
                     os.makedirs(openpath)
-                subprocess.Popen(['explorer', openpath])
+                subprocess.run(['explorer', openpath])
                 console.print(f":heavy_check_mark: [bold green] log [/bold green]Opened path at [bold yellow]{openpath}[/bold yellow]")
     except Exception as e:
         console.print(f":x:[bold red] Exception! [/bold red] {str(e)}")
