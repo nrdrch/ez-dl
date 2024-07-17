@@ -4,3 +4,5 @@ setup.py
 build
 dist
 *egg-info
+src/nrdrch_ezdl/.cache
+/src/nrdrch_ezdl/__pycache__

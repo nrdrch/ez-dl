@@ -10,11 +10,11 @@ from datetime import datetime
 from rich.tree import Tree
 from rich.panel import Panel
 from rich import inspect
-#from prompt_toolkit import prompt
-#from prompt_toolkit.key_binding import KeyBindings
-#from prompt_toolkit.keys import Keys
+from spot_url_resolver import res_spotify_url
 
-VERSION_ID = "v1.1.9"
+
+
+VERSION_ID = "v1.2.0"
 
 
 
@@ -48,7 +48,9 @@ default_settings = {
         "settings_open_alias": "settings"
     },
     "other": {
-        "loading_animation": "aesthetic"
+        "loading_animation": "aesthetic",
+        "spotify_id": "client_id",
+        "spotify_secret": "lient_secret"
     },
     "color": {
         "settings_cln_clr": "#E7E7E7",
@@ -109,6 +111,8 @@ OPEN_AFTER_DL = settings['settings']['open_folder_after_download']
 SETTINGS_COLOR = settings['color']['settings_cln_clr']
 DESC_CLR_1 = settings['color']['description_clr_1']
 DESC_CLR_2 = settings['color']['description_clr_2']
+SPOTI_ID = settings['other']['spotify_id']
+SPOTI_SECRET = settings['other']['spotify_secret']
 # Function to expand PowerShell variables
 def expand_powershell_variables(value):
     if isinstance(value, str) and value.startswith('$'):
@@ -302,6 +306,17 @@ def main():
             console.print(f"[bold red]:x: Exception![/bold red] {str(e)}")
         return
     link = sys.argv[2]
+    if 'spotify' in link:
+        if SPOTI_ID != 'client_id' and SPOTI_SECRET != 'client_secret':
+            client_id = SPOTI_ID
+            client_secret = SPOTI_SECRET
+            spotify_url = link
+            youtube_url = res_spotify_url(spotify_url, client_id, client_secret)
+            link = youtube_url
+        else:
+            console.print(f"[bold red]:x: log[/bold red] Provide Spotify Web-API [bold red]ID[/bold red] & [bold red]Secret[/bold red] in the [bold yellow]settings.toml[/bold yellow] file to resolve Spotify links.")
+            console.print(f"Create a Spotify Applicaiont and [bold green]enable the Web-API[/bold green] during setup here: https://developer.spotify.com")
+            return
     with_playlist = len(sys.argv) > 3 and (sys.argv[3] in ['wp', 'withplaylist'])
     if alias == f'{AUDIO_ALIAS}':
         command = '$null = yt-dlp -x --audio-quality {audio_quality} --audio-format {audio_format} --ignore-errors {embed_thumbnails} --output "{audio_vault_path}\\{naming_scheme}" --no-playlist "<youtube_link>"'
